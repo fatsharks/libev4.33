@@ -70,13 +70,13 @@ EV_CPP(extern "C" {) //配合上面的宏定义,可以在可以分别按照c和c
 #endif
 #endif
 
-#define EV_FEATURE_CODE ((EV_FEATURES)&1)
-#define EV_FEATURE_DATA ((EV_FEATURES)&2)
-#define EV_FEATURE_CONFIG ((EV_FEATURES)&4)
-#define EV_FEATURE_API ((EV_FEATURES)&8)
-#define EV_FEATURE_WATCHERS ((EV_FEATURES)&16)
-#define EV_FEATURE_BACKENDS ((EV_FEATURES)&32)
-#define EV_FEATURE_OS ((EV_FEATURES)&64)
+#define EV_FEATURE_CODE ((EV_FEATURES)&1)       //1
+#define EV_FEATURE_DATA ((EV_FEATURES)&2)       //2
+#define EV_FEATURE_CONFIG ((EV_FEATURES)&4)     //4
+#define EV_FEATURE_API ((EV_FEATURES)&8)        //8
+#define EV_FEATURE_WATCHERS ((EV_FEATURES)&16)  //16
+#define EV_FEATURE_BACKENDS ((EV_FEATURES)&32)  //32
+#define EV_FEATURE_OS ((EV_FEATURES)&64)        //64
 
 /* these priorities are inclusive, higher priorities will be invoked earlier */
 #ifndef EV_MINPRI
