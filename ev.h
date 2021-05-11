@@ -37,6 +37,8 @@
  * either the BSD or the GPL.
  */
 
+//http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod
+
 #ifndef EV_H_
 #define EV_H_
 
@@ -70,13 +72,13 @@ EV_CPP(extern "C" {) //配合上面的宏定义,可以在可以分别按照c和c
 #endif
 #endif
 
-#define EV_FEATURE_CODE ((EV_FEATURES)&1)       //1
-#define EV_FEATURE_DATA ((EV_FEATURES)&2)       //2
-#define EV_FEATURE_CONFIG ((EV_FEATURES)&4)     //4
-#define EV_FEATURE_API ((EV_FEATURES)&8)        //8
-#define EV_FEATURE_WATCHERS ((EV_FEATURES)&16)  //16
-#define EV_FEATURE_BACKENDS ((EV_FEATURES)&32)  //32
-#define EV_FEATURE_OS ((EV_FEATURES)&64)        //64
+#define EV_FEATURE_CODE ((EV_FEATURES)&1)      //1
+#define EV_FEATURE_DATA ((EV_FEATURES)&2)      //2
+#define EV_FEATURE_CONFIG ((EV_FEATURES)&4)    //4
+#define EV_FEATURE_API ((EV_FEATURES)&8)       //8
+#define EV_FEATURE_WATCHERS ((EV_FEATURES)&16) //16
+#define EV_FEATURE_BACKENDS ((EV_FEATURES)&32) //32
+#define EV_FEATURE_OS ((EV_FEATURES)&64)       //64
 
 /* these priorities are inclusive, higher priorities will be invoked earlier */
 #ifndef EV_MINPRI
@@ -286,6 +288,15 @@ enum {
 #endif
 
 /* shared by all watchers */
+/*
+*struct {
+  int active;
+  int pending;
+  int priority;
+  void *data;
+  void (*cb)(struct ev_loop* loop, struct type* w, int revents);
+}
+*/
 #define EV_WATCHER(type)                    \
   int active;                 /* private */ \
   int pending;                /* private */ \
@@ -376,7 +387,7 @@ typedef struct ev_child
 #ifdef _WIN32
 typedef struct _stati64 ev_statdata;
 #else
-typedef struct stat ev_statdata;
+typedef struct stat ev_statdata; //macro from sys/wait.h
 #endif
 
 /* invoked each time the stat data changes for a given path */
@@ -468,6 +479,7 @@ typedef struct ev_async
 #endif
 
 /* the presence of this union forces similar struct layout */
+/* 包含了ev_watcher的所有状态或者特性 */
 union ev_any_watcher
 {
   struct ev_watcher w;
@@ -518,6 +530,9 @@ enum {
 };
 
 /* method bits to be ored together */
+/* 
+ * 根据不同的系统选择不同的方式 
+ */
 enum {
   EVBACKEND_SELECT   = 0x00000001U, /* available just about anywhere */
   EVBACKEND_POLL     = 0x00000002U, /* !win, !aix, broken on osx */
@@ -566,6 +581,9 @@ EV_API_DECL struct ev_loop *ev_default_loop (unsigned int flags EV_CPP (= 0)) EV
 EV_API_DECL struct ev_loop *ev_default_loop_ptr;
 #endif
 
+// static inline使函数内联，但是编译器不一定内联，为防止重复定义，添加static修饰
+
+/* the default loop */
 EV_INLINE struct ev_loop *
 ev_default_loop_uc_ (void) EV_NOEXCEPT
 {
@@ -649,6 +667,7 @@ EV_API_DECL void ev_break (EV_P_ int how EV_CPP (= EVBREAK_ONE)) EV_NOEXCEPT; /*
  * ref/unref can be used to add or remove a refcount on the mainloop. every watcher
  * keeps one reference. if you have a long-running watcher you never unregister that
  * should not keep ev_loop from running, unref() after starting, and ref() before stopping.
+ * 增加以及删除引用计数
  */
 EV_API_DECL void ev_ref   (EV_P) EV_NOEXCEPT;
 EV_API_DECL void ev_unref (EV_P) EV_NOEXCEPT;
@@ -662,12 +681,18 @@ EV_API_DECL void ev_once (EV_P_ int fd, int events, ev_tstamp timeout, void (*cb
 EV_API_DECL void ev_invoke_pending (EV_P); /* invoke all pending watchers */
 
 #if EV_FEATURE_API
-EV_API_DECL unsigned int ev_iteration (EV_P) EV_NOEXCEPT; /* number of loop iterations */
-EV_API_DECL unsigned int ev_depth     (EV_P) EV_NOEXCEPT; /* #ev_loop enters - #ev_loop leaves */
-EV_API_DECL void         ev_verify    (EV_P) EV_NOEXCEPT; /* abort if loop data corrupted */
+/* number of loop iterations */
+EV_API_DECL unsigned int ev_iteration (EV_P) EV_NOEXCEPT; 
+/* #ev_loop enters - #ev_loop leaves */
+EV_API_DECL unsigned int ev_depth     (EV_P) EV_NOEXCEPT; 
+/* abort if loop data corrupted */
+EV_API_DECL void         ev_verify    (EV_P) EV_NOEXCEPT; 
 
-EV_API_DECL void ev_set_io_collect_interval (EV_P_ ev_tstamp interval) EV_NOEXCEPT; /* sleep at least this time, default 0 */
-EV_API_DECL void ev_set_timeout_collect_interval (EV_P_ ev_tstamp interval) EV_NOEXCEPT; /* sleep at least this time, default 0 */
+/* 
+ * sleep at least this time, default 0 
+ */
+EV_API_DECL void ev_set_io_collect_interval (EV_P_ ev_tstamp interval) EV_NOEXCEPT; 
+EV_API_DECL void ev_set_timeout_collect_interval (EV_P_ ev_tstamp interval) EV_NOEXCEPT; 
 
 /* advanced stuff for threading etc. support, see docs */
 EV_API_DECL void ev_set_userdata (EV_P_ void *data) EV_NOEXCEPT;
@@ -677,7 +702,8 @@ EV_API_DECL void ev_set_invoke_pending_cb (EV_P_ ev_loop_callback invoke_pending
 /* C++ doesn't allow the use of the ev_loop_callback typedef here, so we need to spell it out */
 EV_API_DECL void ev_set_loop_release_cb (EV_P_ void (*release)(EV_P) EV_NOEXCEPT, void (*acquire)(EV_P) EV_NOEXCEPT) EV_NOEXCEPT;
 
-EV_API_DECL unsigned int ev_pending_count (EV_P) EV_NOEXCEPT; /* number of pending events, if any */
+/* number of pending events, if any */
+EV_API_DECL unsigned int ev_pending_count (EV_P) EV_NOEXCEPT; 
 
 /*
  * stop/start the timer handling.
@@ -699,6 +725,9 @@ EV_API_DECL void ev_resume  (EV_P) EV_NOEXCEPT;
     ev_set_cb((ev), cb_);                          \
   } while (0)
 
+/*
+ * modify or set the arguments in ev_io struct
+ */
 #define ev_io_modify(ev, events_)                          \
   do                                                       \
   {                                                        \
@@ -709,7 +738,8 @@ EV_API_DECL void ev_resume  (EV_P) EV_NOEXCEPT;
   {                                         \
     (ev)->fd = (fd_);                       \
     (ev)->events = (events_) | EV__IOFDSET; \
-  } while (0)
+  } while (0)　//?为啥直接或运算，EV__IOFDSET = 10000000，最高位为1
+
 #define ev_timer_set(ev, after_, repeat_)     \
   do                                          \
   {                                           \
@@ -884,14 +914,14 @@ EV_API_DECL void ev_periodic_stop  (EV_P_ ev_periodic *w) EV_NOEXCEPT;
 EV_API_DECL void ev_periodic_again (EV_P_ ev_periodic *w) EV_NOEXCEPT;
 #endif
 
-/* only supported in the default loop */
 #if EV_SIGNAL_ENABLE
+/* only supported in the default loop */
 EV_API_DECL void ev_signal_start   (EV_P_ ev_signal *w) EV_NOEXCEPT;
 EV_API_DECL void ev_signal_stop    (EV_P_ ev_signal *w) EV_NOEXCEPT;
 #endif
 
-/* only supported in the default loop */
 #if EV_CHILD_ENABLE
+/* only supported in the default loop */
 EV_API_DECL void ev_child_start    (EV_P_ ev_child *w) EV_NOEXCEPT;
 EV_API_DECL void ev_child_stop     (EV_P_ ev_child *w) EV_NOEXCEPT;
 #endif
