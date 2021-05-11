@@ -1216,6 +1216,7 @@ ecb_function_ ecb_const uint8_t  ecb_bitrev8  (uint8_t  x)
           | (x * 0x8020U & 0x88440U)) * 0x10101U >> 16;
 }
 
+/* 位反转 */
 ecb_function_ ecb_const uint16_t ecb_bitrev16 (uint16_t x);
 ecb_function_ ecb_const uint16_t ecb_bitrev16 (uint16_t x)
 {
