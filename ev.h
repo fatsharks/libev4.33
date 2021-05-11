@@ -216,7 +216,7 @@ struct ev_loop;
 #endif
 
   /*****************************************************************************/
-//libev的版本好4-33
+//libev的版本号4-33
 #define EV_VERSION_MAJOR 4
 #define EV_VERSION_MINOR 33
 
