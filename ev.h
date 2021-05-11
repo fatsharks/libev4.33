@@ -66,7 +66,7 @@ EV_CPP(extern "C" {) //配合上面的宏定义,可以在可以分别按照c和c
 #if defined __OPTIMIZE_SIZE__
 #define EV_FEATURES 0x7c
 #else
-#define EV_FEATURES 0x7f //TODO: EV_FEATURES宏定义
+#define EV_FEATURES 0x7f //? EV_FEATURES宏定义
 #endif
 #endif
 
