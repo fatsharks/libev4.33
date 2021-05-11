@@ -219,7 +219,7 @@
 #ifdef EV_H
 # include EV_H
 #else
-# include "ev.h"
+#include "ev.h"
 #endif
 
 #if EV_NO_THREADS
@@ -254,7 +254,7 @@
 #if defined EV_NSIG
 /* use what's provided */
 #elif defined NSIG
-# define EV_NSIG (NSIG)
+# define EV_NSIG (NSIG) /* NSIG = 65 */
 #elif defined _NSIG
 # define EV_NSIG (_NSIG)
 #elif defined SIGMAX
@@ -565,7 +565,7 @@ struct signalfd_siginfo
 #endif
 
 /*****************************************************************************/
-
+/* debugging */
 #if EV_VERIFY >= 3
 # define EV_FREQUENT_CHECK ev_verify (EV_A)
 #else
@@ -602,6 +602,7 @@ struct signalfd_siginfo
 #endif
 
 /* the following is ecb.h embedded into libev - use update_ev_c to update from an external copy */
+/* http://pod.tst.eu/http://cvs.schmorp.de/libecb/ecb.pod */
 /* ECB.H BEGIN */
 /*
  * libecb - http://software.schmorp.de/pkg/libecb
@@ -684,7 +685,9 @@ struct signalfd_siginfo
   #endif
 #else
   #include <inttypes.h>
+  /* inttypes.h用于各种位宽的整型数据输入输出标志宏转换 */
   #if (defined INTPTR_MAX ? INTPTR_MAX : ULONG_MAX) > 0xffffffffU
+/* The macro ECB_PTRSIZE is defined to the size of a pointer on this platform (currently 4 or 8) and can be used in preprocessor expressions. */
     #define ECB_PTRSIZE 8
   #else
     #define ECB_PTRSIZE 4
@@ -695,15 +698,18 @@ struct signalfd_siginfo
 #define ECB_MSVC_AMD64 (_M_AMD64 || _M_X64)
 
 #ifndef ECB_OPTIMIZE_SIZE
+/* __OPTIMIZE_SIZE__是GCC的预定义宏，在文件大小尺寸上进行优化时为1 */
   #if __OPTIMIZE_SIZE__
     #define ECB_OPTIMIZE_SIZE 1
   #else
+/* Is 1 when the compiler optimizes for size, 0 otherwise.  */
     #define ECB_OPTIMIZE_SIZE 0
   #endif
 #endif
 
 /* work around x32 idiocy by defining proper macros */
 #if ECB_GCC_AMD64 || ECB_MSVC_AMD64
+/* _ILP32宏用来检查x86环境 */
   #if _ILP32
     #define ECB_AMD64_X32 1
   #else
@@ -769,7 +775,6 @@ struct signalfd_siginfo
 
 /* ECB_NO_THREADS - ecb is not used by multiple threads, ever */
 /* ECB_NO_SMP     - ecb might be used in multiple threads, but only on a single cpu */
-
 #if ECB_NO_THREADS
   #define ECB_NO_SMP 1
 #endif
@@ -779,22 +784,30 @@ struct signalfd_siginfo
 #endif
 
 /* http://www-01.ibm.com/support/knowledgecenter/SSGH3R_13.1.0/com.ibm.xlcpp131.aix.doc/compiler_ref/compiler_builtins.html */
+/* builtins.h包含一些编译器内置函数，优化指令调度 */
 #if __xlC__ && ECB_CPP
   #include <builtins.h>
 #endif
 
+/* intrin.h 编译器内部函数头文件 */
 #if 1400 <= _MSC_VER
   #include <intrin.h> /* fence functions _ReadBarrier, also bit search functions _BitScanReverse */
 #endif
 
 #ifndef ECB_MEMORY_FENCE
   #if ECB_GCC_VERSION(2,5) || defined __INTEL_COMPILER || (__llvm__ && __GNUC__) || __SUNPRO_C >= 0x5110 || __SUNPRO_CC >= 0x5110
+    /*
+     * __asm__ 是asm的宏定义，内联汇编
+     * __volatile__　是volatile的宏定义
+     * __asm__ __volatile__ ("" : : : "memory")就是向编译器声明此处内存发生改动，不要优化
+     */
     #define ECB_MEMORY_FENCE_RELAXED __asm__ __volatile__ ("" : : : "memory")
     #if __i386 || __i386__
       #define ECB_MEMORY_FENCE         __asm__ __volatile__ ("lock; orb $0, -1(%%esp)" : : : "memory")
       #define ECB_MEMORY_FENCE_ACQUIRE __asm__ __volatile__ (""                        : : : "memory")
       #define ECB_MEMORY_FENCE_RELEASE __asm__ __volatile__ (""                        : : : "memory")
     #elif ECB_GCC_AMD64
+    /* mfence为内存屏障，保证cpu按照顺序取指运行 */
       #define ECB_MEMORY_FENCE         __asm__ __volatile__ ("mfence"   : : : "memory")
       #define ECB_MEMORY_FENCE_ACQUIRE __asm__ __volatile__ (""         : : : "memory")
       #define ECB_MEMORY_FENCE_RELEASE __asm__ __volatile__ (""         : : : "memory")
@@ -931,6 +944,7 @@ struct signalfd_siginfo
 #if ECB_CPP
   #define ecb_inline static inline
 #elif ECB_GCC_VERSION(2,5)
+  /* static inline */
   #define ecb_inline static __inline__
 #elif ECB_C99
   #define ecb_inline static inline
@@ -939,6 +953,7 @@ struct signalfd_siginfo
 #endif
 
 #if ECB_GCC_VERSION(3,3)
+  /* restrict是c99标准引入的，它只可以用于限定和约束指针，并表明指针是访问一个数据对象的唯一且初始的方式 */
   #define ecb_restrict __restrict__
 #elif ECB_C99
   #define ecb_restrict restrict
@@ -952,17 +967,21 @@ typedef int ecb_bool;
 #define ECB_CONCAT(a, b) ECB_CONCAT_(a, b)
 #define ECB_STRINGIFY_(a) # a
 #define ECB_STRINGIFY(a) ECB_STRINGIFY_(a)
+/* ECB_STRINGIFY_EXPR(expr)会判断expr是否是有效的表达式 */
 #define ECB_STRINGIFY_EXPR(expr) ((expr), ECB_STRINGIFY_ (expr))
 
 #define ecb_function_ ecb_inline
 
 #if ECB_GCC_VERSION(3,1) || ECB_CLANG_VERSION(2,8)
+  /* __attribute__编译器宏，用于设置函数属性，变量属性和类型属性 */
   #define ecb_attribute(attrlist)        __attribute__ (attrlist)
 #else
   #define ecb_attribute(attrlist)
 #endif
 
 #if ECB_GCC_VERSION(3,1) || ECB_CLANG_BUILTIN(__builtin_constant_p)
+  /*  __builtin_constant_p 是编译器gcc内置函数，用于判断一个值是否为编译时常量，
+  如果是常数，函数返回1 ，否则返回0。此内置函数的典型用法是在宏中用于手动编译时优化。 */
   #define ecb_is_constant(expr)          __builtin_constant_p (expr)
 #else
   /* possible C11 impl for integral types
@@ -973,12 +992,19 @@ typedef int ecb_bool;
 #endif
 
 #if ECB_GCC_VERSION(3,1) || ECB_CLANG_BUILTIN(__builtin_expect)
+  /* __builtin_expect宏，用于分支预测优化，降低汇编代码的跳转次数 */
   #define ecb_expect(expr,value)         __builtin_expect ((expr),(value))
 #else
   #define ecb_expect(expr,value)         (expr)
 #endif
 
 #if ECB_GCC_VERSION(3,1) || ECB_CLANG_BUILTIN(__builtin_prefetch)
+/*
+ * __builtin_prefetch为GCC内置宏，用于数据的预抓取，提升效率
+ * addr - 地址指针，需要用户自己保证地址正确
+ * rw - 控制读写的常数，1表示写，0表示读
+ * locality - 表示时间局部性的常数．3表示最高的时间局部性，被访问的数据可能很快再次访问；0表示不具有时间局部性，默认3
+ */
   #define ecb_prefetch(addr,rw,locality) __builtin_prefetch (addr, rw, locality)
 #else
   #define ecb_prefetch(addr,rw,locality)
@@ -990,12 +1016,14 @@ typedef int ecb_bool;
   template<class T> struct ecb_decltype_t { typedef T type; };
   #define ecb_decltype(x) ecb_decltype_t<decltype (x)>::type
 #elif ECB_GCC_VERSION(3,0) || ECB_CLANG_VERSION(2,8)
+  /* __typeof__GCC内置宏，用于类型推导 */
   #define ecb_decltype(x) __typeof__ (x)
 #endif
 
 #if _MSC_VER >= 1300
   #define ecb_deprecated __declspec (deprecated)
 #else
+  /* __deprecated__宏，搭配__attribute__使用，用于提醒用户API可能过时 */
   #define ecb_deprecated ecb_attribute ((__deprecated__))
 #endif
 
@@ -1010,15 +1038,25 @@ typedef int ecb_bool;
 #if _MSC_VER >= 1400
   #define ecb_noinline __declspec (noinline)
 #else
+  /* __noinline__宏，搭配__attribute__使用，不要内联 */
   #define ecb_noinline ecb_attribute ((__noinline__))
 #endif
-
+/* __unused__宏，搭配__attribute__使用， 抑制编译器对于未使用变量的警告*/
 #define ecb_unused     ecb_attribute ((__unused__))
+/* __const__宏，搭配__attribute__使用， 声明该函数仅取决于其自身参数的值．
+不会读写任何参数可能指向的内存，全局变量或调用任何非const函数。*/
 #define ecb_const      ecb_attribute ((__const__))
+/* 
+ * __pure__宏，搭配__attribute__使用.
+ * 很多函数除了返回值外没有作用，而且它们的返回值只取决于参数和/或全局变量。
+ * 这样的一个函数可能依附于普通的子表达式的消除和循环的优化，就像一个算术操作符那样。这些函数应该用属性pure来声明。
+*/
 #define ecb_pure       ecb_attribute ((__pure__))
 
 #if ECB_C11 || __IBMC_NORETURN
   /* http://www-01.ibm.com/support/knowledgecenter/SSGH3R_13.1.0/com.ibm.xlcpp131.aix.doc/language_ref/noreturn.html */
+  /* _Noreturn 关键词出现于函数声明中，指定函数不会由于执行到 return 语句或抵达函数体结尾而返回.
+  调用函数没有返回值，所以程序就停在函数里面了,需要搭配其他属性使用 */
   #define ecb_noreturn   _Noreturn
 #elif ECB_CPP11
   #define ecb_noreturn   [[noreturn]]
@@ -1030,8 +1068,11 @@ typedef int ecb_bool;
 #endif
 
 #if ECB_GCC_VERSION(4,3)
+  /* __artificial__宏，搭配__attribute__使用， 当使用内联函数时，可以输出调试信息*/
   #define ecb_artificial ecb_attribute ((__artificial__))
+  /* __hot__宏，搭配__attribute__使用， 表明该函数或者变量使用频繁，尽量保存在缓存中*/
   #define ecb_hot        ecb_attribute ((__hot__))
+  /* __cold__宏，搭配__attribute__使用， 表明该函数或者变量较少使用，或者对速度没有严格要求，尽量移出缓存*/
   #define ecb_cold       ecb_attribute ((__cold__))
 #else
   #define ecb_artificial
@@ -1054,10 +1095,16 @@ typedef int ecb_bool;
         && ECB_CLANG_BUILTIN(__builtin_ctz) && ECB_CLANG_BUILTIN(__builtin_ctzll) \
         && ECB_CLANG_BUILTIN(__builtin_popcount))
   /* we assume int == 32 bit, long == 32 or 64 bit and long long == 64 bit */
+  /* __builtin_clz(unsigned int x) - 计算x前导0的个数。x=0时结果未定义 */
+  /* ^ - 异或运算符，相同为0，不同为1 */
   #define ecb_ld32(x)      (__builtin_clz      (x) ^ 31)
+  /* __builtin_clzll(long long x) - 计算x前导0的个数。x=0时结果未定义 */
   #define ecb_ld64(x)      (__builtin_clzll    (x) ^ 63)
+  /* __builtin_ctz(unsigned int x) - 计算x末尾0的个数。x=0时结果未定义 */
   #define ecb_ctz32(x)      __builtin_ctz      (x)
+  /* __builtin_ctzll(long long x) - 计算x末尾0的个数。x=0时结果未定义 */
   #define ecb_ctz64(x)      __builtin_ctzll    (x)
+  /* __builtin_popcount - 计算x中1的个数 */
   #define ecb_popcount32(x) __builtin_popcount (x)
   /* no popcountll */
 #else
@@ -1155,11 +1202,13 @@ typedef int ecb_bool;
   }
 #endif
 
+/* x是否是2的幂，或者x == 0 */
 ecb_function_ ecb_const ecb_bool ecb_is_pot32 (uint32_t x);
 ecb_function_ ecb_const ecb_bool ecb_is_pot32 (uint32_t x) { return !(x & (x - 1)); }
 ecb_function_ ecb_const ecb_bool ecb_is_pot64 (uint64_t x);
 ecb_function_ ecb_const ecb_bool ecb_is_pot64 (uint64_t x) { return !(x & (x - 1)); }
 
+/* bit reverse　位反转 */
 ecb_function_ ecb_const uint8_t  ecb_bitrev8  (uint8_t  x);
 ecb_function_ ecb_const uint8_t  ecb_bitrev8  (uint8_t  x)
 {
