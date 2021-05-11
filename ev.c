@@ -1227,6 +1227,7 @@ ecb_function_ ecb_const uint16_t ecb_bitrev16 (uint16_t x)
   return x;
 }
 
+/* 位反转 */
 ecb_function_ ecb_const uint32_t ecb_bitrev32 (uint32_t x);
 ecb_function_ ecb_const uint32_t ecb_bitrev32 (uint32_t x)
 {
