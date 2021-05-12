@@ -216,11 +216,13 @@
 
 #include <signal.h>
 
-#ifdef EV_H
-# include EV_H
-#else
+// #ifdef EV_H
+// # include EV_H
+// #else
+// #include "ev.h"
+// #endif
+
 #include "ev.h"
-#endif
 
 #if EV_NO_THREADS
 # undef EV_NO_SMP
@@ -1250,6 +1252,7 @@ ecb_popcount64 (uint64_t x)
   return ecb_popcount32 (x) + ecb_popcount32 (x >> 32);
 }
 
+/* These two families of functions return the value of x after rotating all the bits by count positions to the right (ecb_rotr) or left (ecb_rotl). */
 ecb_inline ecb_const uint8_t  ecb_rotl8  (uint8_t  x, unsigned int count);
 ecb_inline ecb_const uint8_t  ecb_rotr8  (uint8_t  x, unsigned int count);
 ecb_inline ecb_const uint16_t ecb_rotl16 (uint16_t x, unsigned int count);
@@ -1308,6 +1311,7 @@ inline uint64_t ecb_rotr (uint64_t v, unsigned int count) { return ecb_rotr64 (v
 
 #if ECB_GCC_VERSION(4,3) || (ECB_CLANG_BUILTIN(__builtin_bswap32) && ECB_CLANG_BUILTIN(__builtin_bswap64))
   #if ECB_GCC_VERSION(4,8) || ECB_CLANG_BUILTIN(__builtin_bswap16)
+  /* __builtin_bswap16，GCC内置函数，按字节反转x (0x11223344 becomes 0x44332211 in ecb_bswap32)*/
   #define ecb_bswap16(x)  __builtin_bswap16 (x)
   #else
   #define ecb_bswap16(x) (__builtin_bswap32 (x) >> 16)
@@ -1343,6 +1347,7 @@ inline uint64_t ecb_rotr (uint64_t v, unsigned int count) { return ecb_rotr64 (v
 #endif
 
 #if ECB_GCC_VERSION(4,5) || ECB_CLANG_BUILTIN(__builtin_unreachable)
+  /* __builtin_unreachable,GCC内置函数，表明该部分代码不会得到运行 */
   #define ecb_unreachable() __builtin_unreachable ()
 #else
   /* this seems to work fine, but gcc always emits a warning for it :/ */
@@ -1350,9 +1355,10 @@ inline uint64_t ecb_rotr (uint64_t v, unsigned int count) { return ecb_rotr64 (v
   ecb_inline ecb_noreturn void ecb_unreachable (void) { }
 #endif
 
-/* try to tell the compiler that some condition is definitely true */
+/* try to tell the compiler that some condition is definitely true. if cond is false, will not run*/
 #define ecb_assume(cond) if (!(cond)) ecb_unreachable (); else 0
 
+/* 解决数据存储大小端的问题 */
 ecb_inline ecb_const uint32_t ecb_byteorder_helper (void);
 ecb_inline ecb_const uint32_t
 ecb_byteorder_helper (void)
@@ -1363,6 +1369,12 @@ ecb_byteorder_helper (void)
   /* the reason why we have this horrible preprocessor mess */
   /* is to avoid it in all cases, at least on common architectures */
   /* or when using a recent enough gcc version (>= 4.6) */
+  /* 
+   * __BYTE_ORDER__　
+   * __ORDER_LITTLE_ENDIAN__　
+   * __ORDER_BIG_ENDIAN__ 
+   * GCC内置宏，用于判断数据大小端
+   */
 #if (defined __BYTE_ORDER__ && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) \
     || ((__i386 || __i386__ || _M_IX86 || ECB_GCC_AMD64 || ECB_MSVC_AMD64) && !__VOS__)
   #define ECB_LITTLE_ENDIAN 1
@@ -1381,6 +1393,8 @@ ecb_byteorder_helper (void)
 #endif
 }
 
+/* These two functions return true if the byte order is big endian (most-significant byte first) 
+or little endian (least-significant byte first) respectively. */
 ecb_inline ecb_const ecb_bool ecb_big_endian    (void);
 ecb_inline ecb_const ecb_bool ecb_big_endian    (void) { return ecb_byteorder_helper () == 0x11223344; }
 ecb_inline ecb_const ecb_bool ecb_little_endian (void);
@@ -1388,43 +1402,54 @@ ecb_inline ecb_const ecb_bool ecb_little_endian (void) { return ecb_byteorder_he
 
 /*****************************************************************************/
 /* unaligned load/store */
-
+/* uint_fast16_t类型为至少16位的类型，而uint16_t为恰好16位的类型 */
+/* Convert an unsigned 16, 32 or 64 bit value from big endian to host byte order. */
 ecb_inline uint_fast16_t ecb_be_u16_to_host (uint_fast16_t v) { return ecb_little_endian () ? ecb_bswap16 (v) : v; }
 ecb_inline uint_fast32_t ecb_be_u32_to_host (uint_fast32_t v) { return ecb_little_endian () ? ecb_bswap32 (v) : v; }
 ecb_inline uint_fast64_t ecb_be_u64_to_host (uint_fast64_t v) { return ecb_little_endian () ? ecb_bswap64 (v) : v; }
 
+/* Convert an unsigned 16, 32 or 64 bit value from little endian to host byte order. */
 ecb_inline uint_fast16_t ecb_le_u16_to_host (uint_fast16_t v) { return ecb_big_endian    () ? ecb_bswap16 (v) : v; }
 ecb_inline uint_fast32_t ecb_le_u32_to_host (uint_fast32_t v) { return ecb_big_endian    () ? ecb_bswap32 (v) : v; }
 ecb_inline uint_fast64_t ecb_le_u64_to_host (uint_fast64_t v) { return ecb_big_endian    () ? ecb_bswap64 (v) : v; }
 
+/* These functions load an unaligned, unsigned 16, 32 or 64 bit value from memory. */
 ecb_inline uint_fast16_t ecb_peek_u16_u (const void *ptr) { uint16_t v; memcpy (&v, ptr, sizeof (v)); return v; }
 ecb_inline uint_fast32_t ecb_peek_u32_u (const void *ptr) { uint32_t v; memcpy (&v, ptr, sizeof (v)); return v; }
 ecb_inline uint_fast64_t ecb_peek_u64_u (const void *ptr) { uint64_t v; memcpy (&v, ptr, sizeof (v)); return v; }
 
+/* additionally convert from big endian (be) byte order to host byte order while doing so. */
 ecb_inline uint_fast16_t ecb_peek_be_u16_u (const void *ptr) { return ecb_be_u16_to_host (ecb_peek_u16_u (ptr)); }
 ecb_inline uint_fast32_t ecb_peek_be_u32_u (const void *ptr) { return ecb_be_u32_to_host (ecb_peek_u32_u (ptr)); }
 ecb_inline uint_fast64_t ecb_peek_be_u64_u (const void *ptr) { return ecb_be_u64_to_host (ecb_peek_u64_u (ptr)); }
 
+/* additionally convert from little endian (le) byte order to host byte order while doing so. */
 ecb_inline uint_fast16_t ecb_peek_le_u16_u (const void *ptr) { return ecb_le_u16_to_host (ecb_peek_u16_u (ptr)); }
 ecb_inline uint_fast32_t ecb_peek_le_u32_u (const void *ptr) { return ecb_le_u32_to_host (ecb_peek_u32_u (ptr)); }
 ecb_inline uint_fast64_t ecb_peek_le_u64_u (const void *ptr) { return ecb_le_u64_to_host (ecb_peek_u64_u (ptr)); }
 
+/* Convert an unsigned 16, 32 or 64 bit value from host byte order to big endian. */
 ecb_inline uint_fast16_t ecb_host_to_be_u16 (uint_fast16_t v) { return ecb_little_endian () ? ecb_bswap16 (v) : v; }
 ecb_inline uint_fast32_t ecb_host_to_be_u32 (uint_fast32_t v) { return ecb_little_endian () ? ecb_bswap32 (v) : v; }
 ecb_inline uint_fast64_t ecb_host_to_be_u64 (uint_fast64_t v) { return ecb_little_endian () ? ecb_bswap64 (v) : v; }
 
+/* Convert an unsigned 16, 32 or 64 bit value from host byte order to little endian. */
 ecb_inline uint_fast16_t ecb_host_to_le_u16 (uint_fast16_t v) { return ecb_big_endian    () ? ecb_bswap16 (v) : v; }
 ecb_inline uint_fast32_t ecb_host_to_le_u32 (uint_fast32_t v) { return ecb_big_endian    () ? ecb_bswap32 (v) : v; }
 ecb_inline uint_fast64_t ecb_host_to_le_u64 (uint_fast64_t v) { return ecb_big_endian    () ? ecb_bswap64 (v) : v; }
 
+/* These functions store an unaligned, unsigned 16, 32 or 64 bit value to memory. */
 ecb_inline void ecb_poke_u16_u (void *ptr, uint16_t v) { memcpy (ptr, &v, sizeof (v)); }
 ecb_inline void ecb_poke_u32_u (void *ptr, uint32_t v) { memcpy (ptr, &v, sizeof (v)); }
 ecb_inline void ecb_poke_u64_u (void *ptr, uint64_t v) { memcpy (ptr, &v, sizeof (v)); }
 
+/* additionally convert from host byte order to big endian (be) byte order while doing so. */
 ecb_inline void ecb_poke_be_u16_u (void *ptr, uint_fast16_t v) { ecb_poke_u16_u (ptr, ecb_host_to_be_u16 (v)); }
 ecb_inline void ecb_poke_be_u32_u (void *ptr, uint_fast32_t v) { ecb_poke_u32_u (ptr, ecb_host_to_be_u32 (v)); }
 ecb_inline void ecb_poke_be_u64_u (void *ptr, uint_fast64_t v) { ecb_poke_u64_u (ptr, ecb_host_to_be_u64 (v)); }
-                                                                                                
+
+/* 
+ * additionally convert from host byte order to little endian (le) byte order while doing so. */                                                                                           
 ecb_inline void ecb_poke_le_u16_u (void *ptr, uint_fast16_t v) { ecb_poke_u16_u (ptr, ecb_host_to_le_u16 (v)); }
 ecb_inline void ecb_poke_le_u32_u (void *ptr, uint_fast32_t v) { ecb_poke_u32_u (ptr, ecb_host_to_le_u32 (v)); }
 ecb_inline void ecb_poke_le_u64_u (void *ptr, uint_fast64_t v) { ecb_poke_u64_u (ptr, ecb_host_to_le_u64 (v)); }
@@ -1459,6 +1484,7 @@ template<typename T> inline void ecb_poke_le_u (void *ptr, T v) { return ecb_pok
 /*****************************************************************************/
 
 #if ECB_GCC_VERSION(3,0) || ECB_C99
+  /* 取模和取余运算，符号相同时，取模取余结果相同，符号相异时，取余商向0舍进，取模商向负无穷舍进 */
   #define ecb_mod(m,n) ((m) % (n) + ((m) % (n) < 0 ? (n) : 0))
 #else
   #define ecb_mod(m,n) ((m) < 0 ? ((n) - 1 - ((-1 - (m)) % (n))) : ((m) % (n)))
@@ -1476,6 +1502,8 @@ template<typename T> inline void ecb_poke_le_u (void *ptr, T v) { return ecb_pok
     return val < 0 ? - ((-val          ) / div) : (val + div - 1) / div;
   }
 #else
+  /* Returns val divided by div rounded down or up, respectively. 
+  val and div must have integer types and div must be strictly positive */
   #define ecb_div_rd(val,div) ((val) < 0 ? - ((-(val) + (div) - 1) / (div)) : ((val)            ) / (div))
   #define ecb_div_ru(val,div) ((val) < 0 ? - ((-(val)            ) / (div)) : ((val) + (div) - 1) / (div))
 #endif
@@ -1620,19 +1648,23 @@ ecb_binary32_to_binary16 (uint32_t x)
 
   /* only the oldest of old doesn't have this one. solaris. */
   #ifdef INFINITY
+    // __builtin_inff
     #define ECB_INFINITY INFINITY
   #else
     #define ECB_INFINITY HUGE_VAL
   #endif
 
   #ifdef NAN
+    // __builtin_nanf
     #define ECB_NAN NAN
   #else
     #define ECB_NAN ECB_INFINITY
   #endif
 
   #if ECB_C99 || _XOPEN_VERSION >= 600 || _POSIX_VERSION >= 200112L
+    /* X times (two to the EXP power).  */
     #define ecb_ldexpf(x,e) ldexpf ((x), (e))
+    /* Break VALUE into a normalized fraction and an integral power of 2.  */
     #define ecb_frexpf(x,e) frexpf ((x), (e))
   #else
     #define ecb_ldexpf(x,e) (float) ldexp ((double) (x), (e))
@@ -1920,9 +1952,11 @@ static EV_ATOMIC_T have_monotonic; /* did clock_gettime (CLOCK_MONOTONIC) work? 
 #endif
 
 #ifndef EV_FD_TO_WIN32_HANDLE
+/* 检索与指定的文件说明符关联的操作系统文件句柄 */
 # define EV_FD_TO_WIN32_HANDLE(fd) _get_osfhandle (fd)
 #endif
 #ifndef EV_WIN32_HANDLE_TO_FD
+/* 将 C 运行时文件描述符与现有操作系统文件句柄关联,成功返回fd */
 # define EV_WIN32_HANDLE_TO_FD(handle) _open_osfhandle (handle, 0)
 #endif
 #ifndef EV_WIN32_CLOSE_FD
@@ -1989,6 +2023,7 @@ ev_floor (ev_tstamp v)
 /*****************************************************************************/
 
 #ifdef __linux
+/* sys/utsname.h　系统名头文件 */
 # include <sys/utsname.h>
 #endif
 
@@ -2184,6 +2219,7 @@ typedef struct
   {
     ev_tstamp ev_rt_now;
     #define ev_rt_now ((loop)->ev_rt_now)
+    //only used in ev_vars.h to define variables
     #define VAR(name,decl) decl;
       #include "ev_vars.h"
     #undef VAR

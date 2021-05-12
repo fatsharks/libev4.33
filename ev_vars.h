@@ -36,7 +36,7 @@
  * provisions above, a recipient may use your version of this file under
  * either the BSD or the GPL.
  */
-
+// #define VAR(name,decl) decl;
 #define VARx(type,name) VAR(name, type name)
 
 VARx(ev_tstamp, now_floor) /* last time we refreshed rt_time */
