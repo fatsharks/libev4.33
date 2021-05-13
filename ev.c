@@ -2258,6 +2258,7 @@ typedef struct
 ev_tstamp
 ev_time (void) EV_NOEXCEPT
 {
+//realtime也就是walltime，指的是现实的时间，可以改变
 #if EV_USE_REALTIME
   if (ecb_expect_true (have_realtime))
     {
@@ -2278,6 +2279,7 @@ ev_time (void) EV_NOEXCEPT
 inline_size ev_tstamp
 get_clock (void)
 {
+//monotonic，是系统启动之后的时间
 #if EV_USE_MONOTONIC
   if (ecb_expect_true (have_monotonic))
     {
@@ -2395,13 +2397,14 @@ pendingcb (EV_P_ ev_prepare *w, int revents)
 {
 }
 
+/* sent by libev users to signal watchers */
 ecb_noinline
 void
 ev_feed_event (EV_P_ void *w, int revents) EV_NOEXCEPT
 {
   W w_ = (W)w;
   int pri = ABSPRI (w_);
-
+  //w_->pending其具体的值，代表该监视器在pendings [pri]中的排名（从1开始），也就是当前(loop->pendingcnt) [pri]的值。
   if (ecb_expect_false (w_->pending))
     pendings [pri][w_->pending - 1].events |= revents;
   else
@@ -2440,7 +2443,7 @@ queue_events (EV_P_ W *events, int eventcnt, int type)
 }
 
 /*****************************************************************************/
-
+/* 根据fd找到相应的ANFD结构，轮训其中的监视器链表，如果某监视器上的事件触发了，则调用ev_feed_event函数处理 */
 inline_speed void
 fd_event_nocheck (EV_P_ int fd, int revents)
 {
@@ -2476,6 +2479,7 @@ ev_feed_fd_event (EV_P_ int fd, int revents) EV_NOEXCEPT
 
 /* make sure the external fd watch events are in-sync */
 /* with the kernel/libev internal state */
+/* 遍历fdchanges数组，如果发现fd的监视条件发生变化了，就会调用epoll_ctl()函数来改变fd的监视状态 */
 inline_size void
 fd_reify (EV_P)
 {
@@ -2536,15 +2540,16 @@ fd_reify (EV_P)
           for (w = (ev_io *)anfd->head; w; w = (ev_io *)((WL)w)->next)
             anfd->events |= (unsigned char)w->events;
 
-          if (o_events != anfd->events)
-            o_reify = EV__IOFDSET; /* actually |= */
+          if (o_events != anfd->events) //如果新监控事件和旧监控事件不同
+            o_reify = EV__IOFDSET; /* actually |= *///修改标志位，表示fd监控条件改变
         }
 
-      if (o_reify & EV__IOFDSET)
+      if (o_reify & EV__IOFDSET)//fd监控条件改变，调用backend_modify也就是epoll_ctl()修改fd的监控条件
         backend_modify (EV_A_ fd, o_events, anfd->events);
     }
 
-  /* normally, fdchangecnt hasn't changed. if it has, then new fds have been added.
+  /* 
+   * normally, fdchangecnt hasn't changed. if it has, then new fds have been added.
    * this is a rare case (see beginning comment in this function), so we copy them to the
    * front and hope the backend handles this case.
    */
@@ -2555,14 +2560,15 @@ fd_reify (EV_P)
 }
 
 /* something about the given fd changed */
+/* 有新的监视IO事件的fd增加，或者原先的fd监视条件发生改变 */
 inline_size
 void
 fd_change (EV_P_ int fd, int flags)
 {
   unsigned char reify = anfds [fd].reify;
-  anfds [fd].reify = reify | flags;
+  anfds [fd].reify = reify | flags;//标志，表示fd监视条件被修改了
 
-  if (ecb_expect_true (!reify))
+  if (ecb_expect_true (!reify))//如果fd最初的监视条件为空，表示为新增加的监视fd
     {
       ++fdchangecnt;
       array_needsize (int, fdchanges, fdchangemax, fdchangecnt, array_needsize_noinit);
@@ -2594,7 +2600,7 @@ fd_valid (int fd)
 #endif
 }
 
-/* called on EBADF to verify fds */
+/* called on EBADF-bad file descriptor to verify fds */
 ecb_noinline ecb_cold
 static void
 fd_ebadf (EV_P)
@@ -2608,6 +2614,7 @@ fd_ebadf (EV_P)
 }
 
 /* called on ENOMEM in select/poll to kill some fds and retry */
+/* ENOMEM - 没有可用的内存。系统不能分配更多的虚拟内存因为它的容量已经满了。 */
 ecb_noinline ecb_cold
 static void
 fd_enomem (EV_P)
@@ -2647,7 +2654,9 @@ fd_intern (int fd)
   unsigned long arg = 1;
   ioctlsocket (EV_FD_TO_WIN32_HANDLE (fd), FIONBIO, &arg);
 #else
+  //FD_CLOEXEC - fork子进程后在子进程中直接执行close关掉无用的文件描述符，然后再执行exec。
   fcntl (fd, F_SETFD, FD_CLOEXEC);
+  //O_NONBLOCK - 使I/O变成非阻塞模式，在读取不到数据或是写入缓冲区已满会马上return，而不会搁置程序动作，直到有数据或写入完成。
   fcntl (fd, F_SETFL, O_NONBLOCK);
 #endif
 }
@@ -2668,12 +2677,16 @@ fd_intern (int fd)
  */
 #if EV_USE_4HEAP
 
+//4叉堆
+//下标为k的元素（对应在正常实现中的下标是k-3），其孩子节点的下标范围是[4(k-3)+1+3, 4(k-3)+4+3]；其父节点的下标是((k-3-1)/4)+3。
 #define DHEAP 4
 #define HEAP0 (DHEAP - 1) /* index of first element in heap */
 #define HPARENT(k) ((((k) - HEAP0 - 1) / DHEAP) + HEAP0)
-#define UPHEAP_DONE(p,k) ((p) == (k))
+#define UPHEAP_DONE(p,k) ((p) == (k)) //用于向上调整堆时，判断是否已经到达了根节点，对于4叉堆而言，根节点为3，其父节点也为3
 
 /* away from the root */
+///@param N number of the element
+///@param k index of the element to adjust
 inline_speed void
 downheap (ANHE *heap, int N, int k)
 {

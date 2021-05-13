@@ -71,14 +71,17 @@ EV_CPP(extern "C" {) //配合上面的宏定义,可以在可以分别按照c和c
 #define EV_FEATURES 0x7f //? EV_FEATURES宏定义
 #endif
 #endif
-
-#define EV_FEATURE_CODE ((EV_FEATURES)&1)      //1
-#define EV_FEATURE_DATA ((EV_FEATURES)&2)      //2
-#define EV_FEATURE_CONFIG ((EV_FEATURES)&4)    //4
-#define EV_FEATURE_API ((EV_FEATURES)&8)       //8
-#define EV_FEATURE_WATCHERS ((EV_FEATURES)&16) //16
-#define EV_FEATURE_BACKENDS ((EV_FEATURES)&32) //32
-#define EV_FEATURE_OS ((EV_FEATURES)&64)       //64
+//1,Use larger code to speed up some operations,The default is off when __OPTIMIZE_SIZE__ is defined by your compiler
+#define EV_FEATURE_CODE ((EV_FEATURES)&1)
+//2 Replaces the small 2-heap for timer management by a faster 4-heap, larger hash table sizes and so on.
+#define EV_FEATURE_DATA ((EV_FEATURES)&2)
+//4,This enables priorities (sets EV_MAXPRI=2 and EV_MINPRI=-2), and enables multiplicity (EV_MULTIPLICITY=1).
+#define EV_FEATURE_CONFIG ((EV_FEATURES)&4)    
+#define EV_FEATURE_API ((EV_FEATURES)&8)       //8,This enables a lot of the "lesser used" API functions.
+#define EV_FEATURE_WATCHERS ((EV_FEATURES)&16) //16,Enables all optional watcher types
+//32,This enables all backends - without this feature, you need to enable at least one backend manually (EV_USE_SELECT is a good choice).
+#define EV_FEATURE_BACKENDS ((EV_FEATURES)&32) 
+#define EV_FEATURE_OS ((EV_FEATURES)&64)       //64,Enable inotify, eventfd, signalfd and similar OS-specific helper APIs by default.
 
 /* these priorities are inclusive, higher priorities will be invoked earlier */
 #ifndef EV_MINPRI
