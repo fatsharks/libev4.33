@@ -165,6 +165,7 @@ typedef EV_TSTAMP_T ev_tstamp;
 
 #ifndef EV_ATOMIC_T
 #include <signal.h>
+/* int类型，以及比int类型小的类型以及指针类型都可以看作原子操作 */
 #define EV_ATOMIC_T sig_atomic_t volatile
 #endif
   //signal.h为信号量的头文件,主要用于信号量的原子处理
@@ -671,6 +672,8 @@ EV_API_DECL void ev_break (EV_P_ int how EV_CPP (= EVBREAK_ONE)) EV_NOEXCEPT; /*
  * keeps one reference. if you have a long-running watcher you never unregister that
  * should not keep ev_loop from running, unref() after starting, and ref() before stopping.
  * 增加以及删除引用计数
+ * ++activecnt;
+ * --activecnt;
  */
 EV_API_DECL void ev_ref   (EV_P) EV_NOEXCEPT;
 EV_API_DECL void ev_unref (EV_P) EV_NOEXCEPT;

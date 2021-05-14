@@ -531,6 +531,10 @@
 #   define EFD_CLOEXEC 02000000
 #  endif
 # endif
+///@brief 创建一个 事件对象 (eventfd object), 用来实现，进程(线程)间的等待/通知(wait/notify) 机制
+///@param initval 内核维护的64位的计数器
+///@param flags
+///@return fd 文件描述符
 EV_CPP(extern "C") int (eventfd) (unsigned int initval, int flags);
 #endif
 
@@ -2721,7 +2725,7 @@ downheap (ANHE *heap, int N, int k)
         break;
 
       heap [k] = *minpos;
-      ev_active (ANHE_w (*minpos)) = k;
+      ev_active (ANHE_w (*minpos)) = k;//将时间监视器的active成员置为其在堆中的下标
 
       k = minpos - heap;
     }
@@ -2822,16 +2826,24 @@ typedef struct
   WL head;
 } ANSIG;
 
+//signals是ANSIG类型的数组，它的下标就是相应的信号值-1，因此，每个信号都有对应的ANSIG结构
 static ANSIG signals [EV_NSIG - 1];
 
 /*****************************************************************************/
-
+/*
+ * Libev中的信号监视器，用于监控信号的发生，因信号是异步的，所以Libev的处理方式是尽量的将异步信号同步化。
+ * 异步信号的同步化方法主要有：signalfd、eventfd、pipe、sigwaitinfo等。这里Libev采用的是前三种方法，
+ * 最终都是将对异步信号的处理，转化成对文件描述符的处理，也就是将ev_signal转化为处理ev_io。
+ */
 #if EV_SIGNAL_ENABLE || EV_ASYNC_ENABLE
 
+/*eventfd是Kernel 2.6.22以后才支持的系统调用，用来创建一个事件对象实现，进程(线程)间的等待/通知机制。
+他维护了一个可以读写的文件描述符，但是只能写入8byte的内容。*/
 ecb_noinline ecb_cold
 static void
 evpipe_init (EV_P)
 {
+  //所有信号使用一个IO监视器pipe_w，如果pipe_w已经处于激活状态，则说明相应的结构已经创建好了，直接返回即可。
   if (!ev_is_active (&pipe_w))
     {
       int fds [2];
@@ -2839,7 +2851,7 @@ evpipe_init (EV_P)
 # if EV_USE_EVENTFD
       fds [0] = -1;
       fds [1] = eventfd (0, EFD_NONBLOCK | EFD_CLOEXEC);
-      if (fds [1] < 0 && errno == EINVAL)
+      if (fds [1] < 0 && errno == EINVAL) //EINVAL - 标志位设置错误
         fds [1] = eventfd (0, 0);
 
       if (fds [1] < 0)
@@ -2850,7 +2862,7 @@ evpipe_init (EV_P)
 
           fd_intern (fds [0]);
         }
-
+      //使用evpipe[0]记录读描述符，evpipe[1]记录写描述符，如果使用eventfd，则evpipe[0]为-1，evpipe[1]为eventfd描述符，读写描述符都是eventfd。
       evpipe [0] = fds [0];
 
       if (evpipe [1] < 0)
@@ -2868,12 +2880,13 @@ evpipe_init (EV_P)
 
       fd_intern (evpipe [1]);
 
-      ev_io_set (&pipe_w, evpipe [0] < 0 ? evpipe [1] : evpipe [0], EV_READ);
+      ev_io_set (&pipe_w, evpipe [0] < 0 ? evpipe [1] : evpipe [0], EV_READ); //只用了read，eventfd为evpipe[1],pipe为evpipe[0]
       ev_io_start (EV_A_ &pipe_w);
       ev_unref (EV_A); /* watcher should not keep loop alive */
     }
 }
 
+//本函数主要作用就是当信号发生时向写描述符写入一个事件，即可触发pipe_w中的读事件，表明有一个或者多个信号触发了
 inline_speed void
 evpipe_write (EV_P_ EV_ATOMIC_T *flag)
 {
@@ -2885,10 +2898,12 @@ evpipe_write (EV_P_ EV_ATOMIC_T *flag)
   *flag = 1;
   ECB_MEMORY_FENCE_RELEASE; /* make sure flag is visible before the wakeup */
 
+  //pipe_write_skipped - 表明是否信号发生了，却因pipe_write_wanted的关系被暂时忽略了 初始化ev_loop时置为0
   pipe_write_skipped = 1;
 
   ECB_MEMORY_FENCE; /* make sure pipe_write_skipped is visible before we check pipe_write_wanted */
 
+  //pipe_write_wanted - 表明是否允许向写描述符写入事件 初始化ev_loop时置为0
   if (pipe_write_wanted)
     {
       int old_errno;
@@ -2959,6 +2974,8 @@ pipecb (EV_P_ ev_io *iow, int revents)
   ECB_MEMORY_FENCE; /* push out skipped, acquire flags */
 
 #if EV_SIGNAL_ENABLE
+  //sig_pendings - 表示是否有信号处于未决状态（触发但尚未处理）。初始化ev_loop时置为0
+  //如果该值已经为1，表示已经有监听的信号处于未决状态了，无需再向写描述符写入事件了。
   if (sig_pending)
     {
       sig_pending = 0;
@@ -4452,7 +4469,7 @@ ev_io_start (EV_P_ ev_io *w) EV_NOEXCEPT
   assert (("libev: ev_io_start called with corrupted watcher", ((WL)w)->next != (WL)w));
 
   fd_change (EV_A_ fd, w->events & EV__IOFDSET | EV_ANFD_REIFY);
-  w->events &= ~EV__IOFDSET;
+  w->events &= ~EV__IOFDSET; //消除EV__IOFDSET掩码
 
   EV_FREQUENT_CHECK;
 }
