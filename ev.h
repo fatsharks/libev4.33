@@ -381,7 +381,7 @@ typedef struct ev_child
   EV_WATCHER_LIST (ev_child)
 
   int flags;   /* private */
-  int pid;     /* ro */
+  int pid;     /* read-only 该监视程序监视的进程ID，或0，表示任何进程ID。 */
   int rpid;    /* rw, holds the received pid */
   int rstatus; /* rw, holds the exit status, use the macros from sys/wait.h */
 } ev_child;
@@ -898,7 +898,10 @@ EV_API_DECL void ev_resume  (EV_P) EV_NOEXCEPT;
 EV_API_DECL void ev_feed_event     (EV_P_ void *w, int revents) EV_NOEXCEPT;
 EV_API_DECL void ev_feed_fd_event  (EV_P_ int fd, int revents) EV_NOEXCEPT;
 #if EV_SIGNAL_ENABLE
+///@brief 将signal对应的pending全部置1
+///@param signum  信号值
 EV_API_DECL void ev_feed_signal    (int signum) EV_NOEXCEPT;
+///@param signum 信号值
 EV_API_DECL void ev_feed_signal_event (EV_P_ int signum) EV_NOEXCEPT;
 #endif
 EV_API_DECL void ev_invoke         (EV_P_ void *w, int revents);

@@ -2989,6 +2989,7 @@ pipecb (EV_P_ ev_io *iow, int revents)
 #endif
 
 #if EV_ASYNC_ENABLE
+  //类似于上面的EV_SIGNAL
   if (async_pending)
     {
       async_pending = 0;
@@ -3024,6 +3025,7 @@ ev_feed_signal (int signum) EV_NOEXCEPT
   evpipe_write (EV_A_ &sig_pending);
 }
 
+//调用ev_feed_signal函数
 static void
 ev_sighandler (int signum)
 {
@@ -3061,6 +3063,7 @@ ev_feed_signal_event (EV_P_ int signum) EV_NOEXCEPT
 }
 
 #if EV_USE_SIGNALFD
+///@brief 该回调函数中，主要是读取sigfd中的信号信息,调用ev_feed_signal_event函数
 static void
 sigfdcb (EV_P_ ev_io *iow, int revents)
 {
@@ -3089,6 +3092,10 @@ static WL childs [EV_PID_HASHSIZE];
 
 static ev_signal childev;
 
+//WIFCONTINUED(status) 非0表示暂停后已经继续运行。
+//WIFEXITED(status) 为非0 表明进程正常结束。
+//WIFSIGNALED(status)为非0 表明进程异常终止。
+//WIFSTOPPED(status)为非0 表明进程处于暂停状态
 #ifndef WIFCONTINUED
 # define WIFCONTINUED(status) 0
 #endif
@@ -3113,6 +3120,8 @@ child_reap (EV_P_ int chain, int pid, int status)
     }
 }
 
+//对于waitpid函数，WCONTINUED选项
+//如果已经停止的孩子因为 SIGCONT 的递送而继续执行返回
 #ifndef WCONTINUED
 # define WCONTINUED 0
 #endif
